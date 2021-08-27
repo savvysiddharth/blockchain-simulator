@@ -1,0 +1,1 @@
+Ttx = 300 # mean for interarrival time of Transactions in seconds

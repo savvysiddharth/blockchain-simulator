@@ -2,15 +2,14 @@ import transaction
 import constants
 import random
 import time
-import seaborn as sns # for visualization
-from scipy.stats import expon # exponential distribution
 import numpy
 
 def testTransaction(txn): # TEST FUNCTION : SHOULD BE MOVED TO DIFFERENT FILE
   print("sender:",txn.sender)
   print("receiver:",txn.receiver)
   print("time:",txn.timestamp)
-  print("time:",txn.timestamp)
+  print("coins:",txn.coins)
+  print("--------------------------")
 
 def getPeer(): # should randomly select 2 peers from network
   # add actual code to fetch random peers
@@ -21,30 +20,45 @@ def getPeer(): # should randomly select 2 peers from network
     peer2 = random.randrange(1000,2000,1) # generating a peer differnt from peer1
   return peer1, peer2
 
+# GLOBAL VARIABLES
+TxnInterarrivalTime = numpy.random.exponential(scale = constants.Ttx, size=None)
+LastTxnTime = time.time()
+
 def generateTransaction():
   peer1, peer2 = getPeer()
   # for coins, you need to find out how much coins peer1 owns
   # ..
   coins = random.random() * 50
   txn = transaction.Transaction(peer1, peer2, coins)
+  global TxnInterarrivalTime
+  TxnInterarrivalTime = numpy.random.exponential(scale = constants.Ttx, size=None)
   return txn
 
 def startSimulation():
-  # setup peers
+  # setup peers and the network
+  # ..
+  global TxnInterarrivalTime
+  global LastTxnTime
   while True: # infinite loop of simulation
+    if(time.time() - LastTxnTime >= TxnInterarrivalTime):
+      txn = generateTransaction()
+      testTransaction(txn)
+      TxnInterarrivalTime = numpy.random.exponential(scale = constants.Ttx, size=None)
+      LastTxnTime = time.time()
+
     # randomly generate txn based on exponential distribution
     # ..
-    pass
   return
 
+startSimulation()
 
 # WARNING: EXPERIMENTATION ZONE AHEAD!
 
 # randtxn = generateTransaction()
 # testTransaction(randtxn)
 
-random_expon = numpy.random.exponential(scale = constants.Ttx, size=None)
-print(random_expon)
+# random_expon = numpy.random.exponential(scale = constants.Ttx, size=None)
+# print(random_expon)
 
 # expon_dist_txns = expon.rvs(scale=constants.Ttx, loc=0, size=1000)
 

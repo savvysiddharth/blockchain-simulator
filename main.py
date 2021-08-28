@@ -20,8 +20,11 @@ def getPeer(): # should randomly select 2 peers from network
     peer2 = random.randrange(1000,2000,1) # generating a peer differnt from peer1
   return peer1, peer2
 
+def getTxnInterarrivalTime(): # gets time from exponential distribution (mean = Ttx)
+  return numpy.random.exponential(scale = constants.Ttx, size=None)
+
 # GLOBAL VARIABLES
-TxnInterarrivalTime = numpy.random.exponential(scale = constants.Ttx, size=None)
+TxnInterarrivalTime = getTxnInterarrivalTime()
 LastTxnTime = time.time()
 
 def generateTransaction():
@@ -31,7 +34,7 @@ def generateTransaction():
   coins = random.random() * 50
   txn = transaction.Transaction(peer1, peer2, coins)
   global TxnInterarrivalTime
-  TxnInterarrivalTime = numpy.random.exponential(scale = constants.Ttx, size=None)
+  TxnInterarrivalTime = getTxnInterarrivalTime()
   return txn
 
 def startSimulation():
@@ -43,7 +46,7 @@ def startSimulation():
     if(time.time() - LastTxnTime >= TxnInterarrivalTime):
       txn = generateTransaction()
       testTransaction(txn)
-      TxnInterarrivalTime = numpy.random.exponential(scale = constants.Ttx, size=None)
+      TxnInterarrivalTime = getTxnInterarrivalTime()
       LastTxnTime = time.time()
 
     # randomly generate txn based on exponential distribution

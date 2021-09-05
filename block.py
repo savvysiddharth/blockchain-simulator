@@ -24,10 +24,11 @@ class Blockchain (object):
         self.chain.append(block);
 
 
-class Transactions(object):
-    def __init__(self, sender, reciever, amt):
-        self.sender = sender;
-        self.reciever = reciever;
-        self.amt = amt;
-        self.time = time.time();
-        self.trxnid = hashlib.sha256(str(self.time)).hexdigest();
+# This class is moved to transaction.py
+# class Transactions(object):
+#     def __init__(self, sender, reciever, amt):
+#         self.sender = sender;
+#         self.reciever = reciever;
+#         self.amt = amt;
+#         self.time = time.time();
+#         self.trxnid = hashlib.sha256(str(self.time)).hexdigest();

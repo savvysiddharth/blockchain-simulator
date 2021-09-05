@@ -3,11 +3,11 @@ import constants
 
 class Network:
     def __init__(self):
-        self.nodes = self.initializeNodes()
-        self.graph = self.randomSampling()
+        self.nodes = self._initializeNodes()
+        self.graph = self._randomSampling()
         self.threshold = 2**128 # threshold for PROOF-OF-WORK
 
-    def initializeNodes(self): # generates nodes (z% slow, 100-z% fast)
+    def _initializeNodes(self): # generates nodes (z% slow, 100-z% fast)
         nodes = []
         slow = int((constants.Z/100) * constants.TotalNodes);
         fast = constants.TotalNodes - slow;
@@ -22,7 +22,7 @@ class Network:
 
         return nodes
 
-    def randomSampling(self): # generates connected graph randomly
+    def _randomSampling(self): # generates connected graph randomly
         graph = [ # hardcoded adjancency list
             [1,2],
             [0,3,4],

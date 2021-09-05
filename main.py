@@ -6,9 +6,6 @@ import numpy
 import network
 import block
 
-import json
-from collections import OrderedDict
-
 def testTransaction(txn): # TEST FUNCTION : SHOULD BE MOVED TO DIFFERENT FILE
   print("sender:",txn.sender)
   print("receiver:",txn.receiver)
@@ -74,3 +71,4 @@ mytree.addNode("0x002", "0x006", "LoL_data_a_lot_of_data")
 mytree.addNode("0x002", "0x007", "LoL_data_a_lot_of_data")
 mytree.addNode("0x002", "0x008", "LoL_data_a_lot_of_data")
 mytree.printTree()
+print(mytree.getDeepestNode())

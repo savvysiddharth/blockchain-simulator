@@ -1,11 +1,13 @@
 import numpy as np
 import time
+import block
 
 class Node(object):
     def __init__(self, id, type, network):
         self.id = id
         self.type = type
         self.utxo = [] # list of unspent transactions
+        self.blockchain = block.Blockchain()
         self.network = network # in which network this node belongs to
         self.txnQueue = []
         self.txnSent = [] # when the node is done forwarding, it will trash txn in this list
@@ -30,9 +32,9 @@ class Node(object):
     def addTransaction(self, transaction):
         self.txnQueue.append(transaction)
 
-    def broadcast(self):
+    def broadcast(self): # implements Q.6
         if self.txnQueues:
-            if self.txnQueue[0] not in self.txnSent: # if txn is not already sent..
+            if self.txnQueue[0] not in self.txnSent: # ensures that txn is not already sent
                 currTxn = self.txnQueues.pop(0)
                 self.txnSent.append(currTxn)
                 nextNodes = self.network.graph[self.id]

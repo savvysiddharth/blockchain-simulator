@@ -42,6 +42,7 @@ def startSimulation():
   # setup peers and the network
   # ..
   mynetwork = network.Network()
+  print(mynetwork.nodes[0].network)
   # ..
   global TxnInterarrivalTime
   global LastTxnTime

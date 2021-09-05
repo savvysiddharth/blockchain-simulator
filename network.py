@@ -13,16 +13,16 @@ class Network:
         fast = constants.TotalNodes - slow;
         id = 0
         for i in range(slow):
-            nodes.append(node.Node(id, "slow"))
+            nodes.append(node.Node(id, "slow", self))
             id += 1
 
         for i in range(fast):
-            nodes.append(node.Node(id, "fast"))
+            nodes.append(node.Node(id, "fast", self))
             id += 1
 
         return nodes
 
-    def randomSampling(self):
+    def randomSampling(self): # generates connected graph randomly
         graph = [ # hardcoded adjancency list
             [1,2],
             [0,3,4],

@@ -4,6 +4,10 @@ import random
 import time
 import numpy
 import network
+import block
+
+import json
+from collections import OrderedDict
 
 def testTransaction(txn): # TEST FUNCTION : SHOULD BE MOVED TO DIFFERENT FILE
   print("sender:",txn.sender)
@@ -42,7 +46,6 @@ def startSimulation():
   # setup peers and the network
   # ..
   mynetwork = network.Network()
-  print(mynetwork.nodes[0].network)
   # ..
   global TxnInterarrivalTime
   global LastTxnTime
@@ -61,19 +64,13 @@ startSimulation()
 
 # WARNING: EXPERIMENTATION ZONE AHEAD!
 
-# randtxn = generateTransaction()
-# testTransaction(randtxn)
+mytree = block.Tree("0x001", "LoL_data_a_lot_of_data")
+mytree.addNode("0x001", "0x002", "LoL_data_a_lot_of_data")
+mytree.addNode("0x001", "0x003", "LoL_data_a_lot_of_data")
+mytree.addNode("0x001", "0x004", "LoL_data_a_lot_of_data")
 
-# random_expon = numpy.random.exponential(scale = constants.Ttx, size=None)
-# print(random_expon)
-
-# expon_dist_txns = expon.rvs(scale=constants.Ttx, loc=0, size=1000)
-
-# print(expon_dist_txns)
-
-# ax = sns.distplot(expon_dist_txns,
-#                   kde=True,
-#                   bins=100,
-#                   color='skyblue',
-#                   hist_kws={"linewidth": 15,'alpha':1})
-# ax.set(xlabel='Exponential Distribution', ylabel='Frequency')
+mytree.addNode("0x002", "0x005", "LoL_data_a_lot_of_data")
+mytree.addNode("0x002", "0x006", "LoL_data_a_lot_of_data")
+mytree.addNode("0x002", "0x007", "LoL_data_a_lot_of_data")
+mytree.addNode("0x002", "0x008", "LoL_data_a_lot_of_data")
+mytree.printTree()

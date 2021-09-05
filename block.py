@@ -1,15 +1,15 @@
 import time
 import hashlib
 
-
-class Block (object):
+class Block:
     def __init__(self, transactions):
-        self.time = time.time();  # Time block was created
-        self.index = hashlib.sha256(str(self.time)).hexdigest(); #Block Number
+        self.timestamp = time.time();  # Time block was created
+        self.nonce = "010101"
+        self.index = hashlib.sha256(str(self.timestamp) + str(self.nonce)).hexdigest(); #Block Number
         self.transactions = transactions; #Transaction Data
         self.prevblk_link=None
 
-class Blockchain (object):
+class Blockchain:
     def __init__(self):
         self.chain = []; #Blockchain is an array of Blocks
 

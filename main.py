@@ -3,6 +3,7 @@ import constants
 import random
 import time
 import numpy
+import network
 
 def testTransaction(txn): # TEST FUNCTION : SHOULD BE MOVED TO DIFFERENT FILE
   print("sender:",txn.sender)
@@ -40,14 +41,16 @@ def generateTransaction():
 def startSimulation():
   # setup peers and the network
   # ..
+  mynetwork = network.Network()
+  # ..
   global TxnInterarrivalTime
   global LastTxnTime
-  while True: # infinite loop of simulation
-    if(time.time() - LastTxnTime >= TxnInterarrivalTime):
-      txn = generateTransaction()
-      testTransaction(txn)
-      TxnInterarrivalTime = getTxnInterarrivalTime()
-      LastTxnTime = time.time()
+  # while True: # infinite loop of simulation
+  #   if(time.time() - LastTxnTime >= TxnInterarrivalTime):
+  #     txn = generateTransaction()
+  #     testTransaction(txn)
+  #     TxnInterarrivalTime = getTxnInterarrivalTime()
+  #     LastTxnTime = time.time()
 
     # randomly generate txn based on exponential distribution
     # ..

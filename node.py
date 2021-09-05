@@ -1,10 +1,10 @@
 import numpy as np
 
-
 class Node(object):
-    def __init__(self, ID, type, env):
-        self.ID = ID
+    def __init__(self, id, type):
+        self.id = id
         self.type = type
+        self.utxo = [] # list of unspent transactions
 
     def latency(self, b, msg_type):
         Pij = np.random.uniform(10, 500)  # in ms as per question

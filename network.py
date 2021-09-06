@@ -1,5 +1,6 @@
 import node
 import constants
+import random
 
 class Network:
     def __init__(self):
@@ -32,3 +33,9 @@ class Network:
         ]
         # get number of peers
         return graph
+
+    def getRandomReceiever(self, sender): 
+        peerIndex = random.randrange(0, constants.TotalNodes+1, 1)
+        while peerIndex == sender.id:
+            peerIndex = random.randrange(0, constants.TotalNodes, 1) # picking a peer differnt from sender
+        return peerIndex

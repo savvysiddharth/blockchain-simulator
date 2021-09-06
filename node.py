@@ -66,7 +66,6 @@ class Node(object):
                 self.txnSent.append(currTxn)
                 nextNodes = self.network.graph[self.id]
                 for adjNodeIndex in nextNodes:
-                    print(currTxn.receiver)
                     txnRecvNode = self.network.nodes[currTxn.receiver]
                     latency = self.latency(txnRecvNode, "transaction")/1000
                     currentTime = time.time()

@@ -24,18 +24,43 @@ class Network:
         return nodes
 
     def _randomSampling(self): # generates connected graph randomly
-        graph = [ # hardcoded adjancency list
-            [1,2],
-            [0,3,4],
-            [0],
-            [1],
-            [1]
-        ]
-        # get number of peers
+        n = constants.TotalNodes
+        graph = []
+        visited = []
+        for i in range(n):
+            graph.append([])
+            visited.append(False)
+
+        edges = random.randrange(n-1, n*(n-1)/2)
+        edgesUsed = 0 # to keep track of current edges
+        currentNode = random.randrange(0,n)
+        visited[currentNode] = True
+        # Begin random walk..
+        while(edgesUsed <= edges):
+            availableChildren = []
+            if(edgesUsed < n-1): # if graph is not connected yet..
+                for i in range(n):
+                    if(visited[i] == False and i != currentNode): # make edge only with unvisited node
+                        availableChildren.append(i)
+            else: # done connecting the graph
+                for i in range(n):
+                    if(i != currentNode): # make edge with any node except with itself
+                        availableChildren.append(i)
+                availableChildren = list(set(availableChildren) - set(graph[currentNode]))
+            if(len(availableChildren) == 0):
+                currentNode = random.randrange(0,n)
+                continue
+            nextNode = availableChildren[random.randrange(0,len(availableChildren))]
+            graph[currentNode].append(nextNode) # add edge into the graph
+            graph[nextNode].append(currentNode) # bcoz, undirected
+            edgesUsed += 1
+            visited[nextNode] = True
+            currentNode = nextNode # move to the next node
+
         return graph
 
     def getRandomReceiever(self, sender): 
-        peerIndex = random.randrange(0, constants.TotalNodes+1, 1)
+        peerIndex = random.randrange(0, constants.TotalNodes, 1)
         while peerIndex == sender.id:
             peerIndex = random.randrange(0, constants.TotalNodes, 1) # picking a peer differnt from sender
         return peerIndex

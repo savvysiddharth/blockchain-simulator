@@ -1,24 +1,34 @@
 import node
 import constants
 import random
+import block
+import transaction
 
 class Network:
     def __init__(self):
         self.nodes = self._initializeNodes()
         self.graph = self._randomSampling()
-        self.threshold = 2**128 # threshold for PROOF-OF-WORK
 
     def _initializeNodes(self): # generates nodes (z% slow, 100-z% fast)
         nodes = []
         slow = int((constants.Z/100) * constants.TotalNodes);
         fast = constants.TotalNodes - slow;
+        initialTransactions = []
+        for i in range(constants.TotalNodes):
+            txn = transaction.Transaction(None, i, 50) # each node gets 50 coins (out of thin air, initially)
+            initialTransactions.append(txn)
+        genesisBlock = block.Block(initialTransactions)
         id = 0
         for i in range(slow):
             nodes.append(node.Node(id, "slow", self))
+            nodes[id].blockchain.addBlock(genesisBlock)
+            nodes[id].utxo.append(initialTransactions[id])
             id += 1
 
         for i in range(fast):
             nodes.append(node.Node(id, "fast", self))
+            nodes[id].blockchain.addBlock(genesisBlock)
+            nodes[id].utxo.append(initialTransactions[id])
             id += 1
 
         return nodes
@@ -64,3 +74,10 @@ class Network:
         while peerIndex == sender.id:
             peerIndex = random.randrange(0, constants.TotalNodes, 1) # picking a peer differnt from sender
         return peerIndex
+
+
+mynetwork = Network()
+
+graph = mynetwork._randomSampling()
+
+print(graph)

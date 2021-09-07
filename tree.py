@@ -3,6 +3,7 @@ class TreeNode: # to store the blockchain
         self.key = key
         self.value = value
         self.children = []
+        self.parent = None
 
 class Tree:
     def __init__(self, rootId, rootValue): # we'll store blockId in rootId, and the actual genesis block in rootvalue
@@ -11,15 +12,17 @@ class Tree:
     
     def addNode(self, parentId, nodeId, nodeVal):
         parentNode = self.searchNode(parentId)
-        if(not parentNode):
+        if(parentNode == None):
             print("Parent not found, can't add node: "+ nodeId)
             return
-        parentNode.children.append(TreeNode(nodeId, nodeVal))
+        newNode = TreeNode(nodeId, nodeVal)
+        newNode.parent = parentNode
+        parentNode.children.append(newNode)
         self.totalNodes += 1
 
     def searchNode(self, keyId):
         return self._searchNode(self.root, keyId)
-    
+
     def _searchNode(self, currentNode, keyId):
         if(currentNode.key == keyId):
             return currentNode
@@ -34,12 +37,12 @@ class Tree:
         self._printTree(self.root, flag, 0, False)
 
     def getDeepestNode(self):
-        return self._getDeepestNode(self.root, self.root)[1]
+        return self._getDeepestNode(self.root, self.root, 0)[1]
 
-    def _getDeepestNode(self, currentNode, currentDeepest):
+    def _getDeepestNode(self, currentNode, currentDeepest, maxDepth):
         maxDepth = 0
         for child in currentNode.children:
-            childDepth = self._getDeepestNode(child, currentDeepest)[0]
+            childDepth = self._getDeepestNode(child, currentDeepest, maxDepth)[0]
             if(childDepth > maxDepth):
                 maxDepth = childDepth
                 currentDeepest = child

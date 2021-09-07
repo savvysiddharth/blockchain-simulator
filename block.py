@@ -10,7 +10,7 @@ class Block:
     def __init__(self, transactions):
         self.timestamp = time.time();  # Time block was created
         self.nonce = "010101"
-        self.id= hashlib.sha256((str(self.timestamp) + str(self.nonce)).encode('utf-8')).hexdigest(); #Block Number
+        self.id= hashlib.sha256((str(self.timestamp) + str(self.nonce)).encode('utf-8')).hexdigest()[:10]; #Block Number
         self.transactions = transactions; #Transaction Data
         self.prev = None
 

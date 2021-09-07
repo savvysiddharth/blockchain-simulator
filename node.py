@@ -4,7 +4,7 @@ import random
 from block import Block
 from block import Blockchain
 from transaction import Transaction
-# import transaction
+import constants
 
 class Node(object):
     def __init__(self, id, type, network):
@@ -26,7 +26,7 @@ class Node(object):
 
     def printNode(self):
         print("nodeId: ", self.id)
-        # print("type:", self.type)
+        print("type:", self.type)
         # print("utxo:", self.utxo)
         # print("txnQueue:", self.txnQueue)
         # print("txnSent:", self.txnSent)
@@ -76,27 +76,29 @@ class Node(object):
     def doRoutine(self): # runs at each loop for each node
         if(time.time() - self.lastTxnTime >= self.TxnInterarrivalTime): # generate transaction if it is time to
             txn = self.generateTransaction()
-            txn.printTransaction()
+            if(constants.enableLiveTransactionPrinting):
+                txn.printTransaction()
             self.lastTxn = time.time()
             self.TxnInterarrivalTime = Transaction.getTxnInterarrivalTime() # updating for next transaction
 
         if(time.time() - self.lastBlockTime >= self.BlockInterarrivalTime): # generate block if it is time to
-            if(random.random() > 0.5):
-                block = self.generateBlock()
-                self.blockchain.addBlock(block) # adds block to current longest chain
-                self.longestChainLength += 1
-                self.broadcast_block(block)
+            # if(random.random() > 0.5):
+            self.check_new_blocks()
+            block = self.generateBlock()
+            self.blockchain.addBlock(block) # adds block to current longest chain
+            self.longestChainLength += 1
+            self.broadcast_block(block)
             self.lastBlockTime = time.time()
             self.BlockInterarrivalTime = Block.getBlockInterarrivalTime()
             if(self.blockchain.getLongestChain()[0].id == self.previouslyAdded):
+                print('here..')
                 self.broadcast_block(self.previouslyAdded)
 
         self.check_and_broadcast_transaction() # broadcast txns in txn queue
-        self.check_new_blocks() # checks blocks in block queue
+        # self.check_new_blocks() # checks blocks in block queue
         return
 
-    def check_new_blocks(self):
-        
+    def check_new_blocks(self):        
         if(self.blockQueue): # if block queue is not empty
             currBlock = self.blockQueue.pop(0)
             blockParentId = currBlock.prev
@@ -104,15 +106,13 @@ class Node(object):
                 self.blockchain.addBlockToParent(blockParentId, currBlock)
                 if(len(self.blockchain.getLongestChain()) > self.longestChainLength):
                     self.previouslyAdded = currBlock
-
-                # self.broadcast_block(currBlock)
         return
 
     def broadcast_block(self, block):
         nextNodes = self.network.graph[self.id]
         for adjNodeIndex in nextNodes:
             adjNode = self.network.nodes[adjNodeIndex]
-            latency = self.latency(adjNode, "transaction")/1000
+            latency = self.latency(adjNode, "block")/1000
             sentTime = time.time()
             while(time.time() - sentTime < latency): # busy waiting
                 pass

@@ -74,10 +74,3 @@ class Network:
         while peerIndex == sender.id:
             peerIndex = random.randrange(0, constants.TotalNodes, 1) # picking a peer differnt from sender
         return peerIndex
-
-
-mynetwork = Network()
-
-graph = mynetwork._randomSampling()
-
-print(graph)

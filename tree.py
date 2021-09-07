@@ -1,7 +1,10 @@
+import time
+
 class TreeNode: # to store the blockchain
     def __init__(self, key, value):
         self.key = key
         self.value = value
+        self.arrivalTime = None
         self.children = []
         self.parent = None
 
@@ -17,6 +20,7 @@ class Tree:
             return
         newNode = TreeNode(nodeId, nodeVal)
         newNode.parent = parentNode
+        newNode.arrivalTime = time.time()
         parentNode.children.append(newNode)
         self.totalNodes += 1
 

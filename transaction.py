@@ -4,12 +4,12 @@ import numpy
 import constants
 
 class Transaction:
-    def __init__(self, sender, receiver, coins):
+    def __init__(self, sender, receiver, coins, txnGeneratedAt):
         self.sender = sender
         self.receiver = receiver
-        self.timestamp = time.time()
+        self.timestamp = txnGeneratedAt
         self.coins = coins
-        self.id = hashlib.sha256(str(self.timestamp).encode('utf-8')).hexdigest()
+        self.id = hashlib.sha256(str(str(self.timestamp)+str(sender)).encode('utf-8')).hexdigest()
 
     def printTransaction(self):
         print("txnId: ", self.id)

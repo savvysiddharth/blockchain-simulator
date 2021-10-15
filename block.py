@@ -7,11 +7,10 @@ import numpy
 import constants
 
 class Block:
-    def __init__(self, transactions):
-        self.timestamp = time.time();  # Time block was created
-        self.nonce = "010101"
-        self.id= hashlib.sha256((str(self.timestamp) + str(self.nonce)).encode('utf-8')).hexdigest()[:10]; #Block Number
-        self.transactions = transactions; #Transaction Data
+    def __init__(self, transactions, newBlk_crTime, cre_id):
+        self.timestamp = newBlk_crTime  # Time block was created
+        self.id= hashlib.sha256((str(self.timestamp) + str(cre_id)).encode('utf-8')).hexdigest()[:10]; #Block Number
+        self.transactions = transactions #Transaction Data
         self.prev = None
 
     @staticmethod
@@ -48,3 +47,7 @@ class Blockchain:
             longestChain.append(currentNode.value)
             currentNode = currentNode.parent
         return longestChain
+
+    def getDeepestBlockID(self):
+        deepestNode = self.chain.getDeepestNode()
+        return deepestNode.key

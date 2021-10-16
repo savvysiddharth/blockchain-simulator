@@ -7,7 +7,7 @@ env = simpy.Environment()
 mynetwork = network.Network(env)
 # peers = mynetwork.nodes
 for node in mynetwork.nodes:
-    if(node.badType != "stubborn"):
+    if(node.badType == "stubborn"):
         env.process(node.runStubborn())
     else:
         env.process(node.run())

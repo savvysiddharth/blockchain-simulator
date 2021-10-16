@@ -9,6 +9,7 @@ class Network:
     self.nodes = self._initializeNodes(env)
     self.graph = self._randomSampling()
     self._connectNodes(self.graph)
+    print(self.graph)
 
 
   def _initializeNodes(self, env): # generates nodes (z% slow, 100-z% fast)
@@ -35,7 +36,7 @@ class Network:
 
     # THAT ONE BAD NODE!!!!!!!!!
     nodes.append(node.Node(env, id, "fast", self, "stubborn"))
-    nodes[id].blockchain.addBlock(genesisBlock)
+    nodes[id].blockchain.addGenesis(genesisBlock)
     nodes[id].utxo.append(initialTransactions[id])
 
     return nodes
@@ -73,7 +74,11 @@ class Network:
       edgesUsed += 1
       visited[nextNode] = True
       currentNode = nextNode # move to the next node
-
+    
+    # graph[n-1] = []
+    # for i in range(n):
+    #   graph[n-1].append(i)
+      
     return graph
 
   def _connectNodes(self, graph):

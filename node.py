@@ -1,4 +1,3 @@
-from math import isinf
 import numpy as np
 import time
 import random
@@ -33,19 +32,22 @@ class Node(object):
 
     self.blockchain = Blockchain() # honest chain
 
+    self.longestHonestChainLength = 1 # due to genesis block
+    self.longestHonestChainLast = None # genesis block here
     # private selfish chain
-    self.firstSelfishNode = None
-    self.lastSelfishNode = None
-    self.privateChain = []
+    self.firstSelfishBlock = None
+    self.lastSelfishBlock = None
+    self.privateBlocks = []
+    self.privateBlocksPublished = []
 
   def run(self):
-    print("inside run() of ",self.id)
+    # print("inside run() of ",self.id)
     while True:
       txnGenInterarrivalTime = random.expovariate(1/constants.Tk)
       self._doHandleTransactions()
       yield self.env.timeout(txnGenInterarrivalTime)
       if self.init == 1:
-        print("len of txn queue of ",self.id," is ",len(self.txnQueue))
+        # print("len of txn queue of ",self.id," is ",len(self.txnQueue))
         self.init = 0
         self.env.process(self.mining(self.env))
 
@@ -67,61 +69,101 @@ class Node(object):
       yield self.env.timeout(txnGenInterarrivalTime)
       if self.init == 1: # start the mining process
         self.init = 0
+        self.longestHonestChainLast = self.blockchain.genesisBlock
         self.env.process(self.stubbornMining(self.env))
 
-  def blockRecvStubborn(self, block, blkrcvdTime, Blk_latency, PrevBlockId):
-    print("rcvd a blk by ", self.id, " but timeout for ",Blk_latency)
+  def blockRecvBdcstStubborn(self, block, blkrcvdTime, Blk_latency, PrevBlockId):
+    # print("rcvd a blk by STUBBORN", self.id, " but timeout for ", Blk_latency)
     yield self.env.timeout(Blk_latency)
-    
-    if block.id not in self.seenBlocks.keys():
-      self.seenBlocks[block.id] = blkrcvdTime
+    # print("WTFFFFF")
+    if block.id not in self.seenBlocks.keys(): # it's a new block!
+      self.seenBlocks[block.id] = blkrcvdTime # mark it as seen
       BlockParentID = PrevBlockId
       if self.blockchain.searchBlock(BlockParentID) is not None:  # the parent block exists in the blockchain
         self.blockchain.addBlockToParent(BlockParentID, block)
-        # remove from txnqueue
+        # remove block txns from txnqueue (so this node doesn't use that to build block in future)
         for txn in block.transactions:
           for s_txns in self.txnQueue:
             if txn.id == s_txns.id:
               self.txnQueue.remove(s_txns)
+        
+        honestStart = None
+        if(self.lastSelfishBlock != None):
+          honestStart = self.blockchain.searchBlock(self.lastSelfishBlock.prev)
+        else:
+          honestStart = self.longestHonestChainLast
+        BlockParent = self.blockchain.searchBlock(BlockParentID)
+        honestChain = self.blockchain.getChainEndsWithBlockBeginWithBlock(honestStart, BlockParent) # on which the "new block" is mined
+        if(len(honestChain) >= self.longestHonestChainLength and self.lastSelfishBlock != None):
+          print("WTFFFFF222222222222222222222222")
+          # panic time : this means, honest miners have formed a new block
+          # self.longestHonestChainLength = newChainLength
+          # self.longestHonestChainLast = block # would be block
+          privateChain = self.blockchain.getChainEndsWithBlockBeginWithBlock(self.firstSelfishBlock, self.lastSelfishBlock)
+          Delta = len(honestChain) - len(privateChain)
+          print("DELTA: ", Delta)
+          if(Delta <= 0): # attacker lost - no hope
+            self.firstSelfishBlock = None
+            self.lastSelfishBlock = None # we don't have private chain anymore (start new)
+          elif(Delta == 1): # attacker can take a chance
+            self.broadcastBlock(self.lastSelfishBlock, self.lastSelfishBlock.prev)
+            self.privateBlocksPublished.append(self.lastSelfishBlock.id)
+          elif(Delta == 2): # attacker wins
+            self.broadcastBlock(self.firstSelfishBlock, self.firstSelfishBlock.prev)
+            self.privateBlocksPublished.append(self.firstSelfishBlock.id)
+            self.firstSelfishBlock = self.lastSelfishBlock
+          else:
+            self.broadcastBlock(self.firstSelfishBlock, self.firstSelfishBlock.prev)
+            self.privateBlocksPublished.append(self.firstSelfishBlock.id)
+            self.firstSelfishBlock = self.blockchain.getNthBlockInChain(self.firstSelfishBlock, self.lastSelfishBlock, 2)
+        self.longestHonestChainLength = len(honestChain) + 1
+        self.longestHonestChainLast = block
+
+        
         #broadcast seen blk
-        nextNodes = self.network.graph[self.id]
-        print("broadcasting blk")
-        for adjNodeIndex in nextNodes:
-          adjNode = self.network.nodes[adjNodeIndex]
-          Blk_latency1 = self.latency(adjNode.type, "block")
-          BlkrcvTime1 = self.env.now + Blk_latency1
-          self.env.process(adjNode.rcv_and_bdcst_blk(block, BlkrcvTime1, Blk_latency1,BlockParentID, self.env))
+        # print("broadcasting blk")
+        # self.broadcastBlock(block, BlockParentID)
+
       else:
         self.pendBlks[block.id]=block
+      
     yield self.env.timeout(1)
 
-    pass
+  # Used by only adversary
+  def broadcastBlock(self, block, BlockParentID):
+    nextNodes = self.network.graph[self.id]
+    # print("broadcasting blk")
+    for adjNodeIndex in nextNodes:
+      adjNode = self.network.nodes[adjNodeIndex]
+      Blk_latency1 = self.latency(adjNode.type, "block")
+      BlkrcvTime1 = self.env.now + Blk_latency1
+      self.env.process(adjNode.rcv_and_bdcst_blk(block, BlkrcvTime1, Blk_latency1, BlockParentID, self.env))
 
-  def stubbornMining(self, env):
+  def stubbornMining(self, env): # selfish but stubborn
     while True:
       while len(self.txnQueue)<1: # can't build new block
-        print("no of txns <1 for ",self.id)
+        # print("no of txns <1 for ",self.id)
         yield self.env.timeout(1)
       # Start private mining
-      privateParent = None # where do we attach new block
-      if(self.lastSelfishNode == None and len(self.privateChain) == 0): # attach it to genesis
-        genesis = self.blockchain.chain.root.value
-        self.firstSelfishNode = genesis # genesis
-        privateParent = genesis 
-        self.privateChain.append(privateParent)
-      else: # attach new block to last selfish node
-        privateParent = self.lastSelfishNode
-
+      parentOfSelfish = None # where do we attach new block
       newBlockCretime = self.env.now
       newBlock = self.createBlk(newBlockCretime)
-      ParentBlkId = privateParent.id
-      chainLength = len(self.blockchain.getChainEndsWithBlock(privateParent))
-      Blk_mean_Tk = random.expovariate(1 / constants.Tk)
-      yield env.timeout(Blk_mean_Tk) # Mining time
-      self.blockchain.addBlockToParent(ParentBlkId, newBlock)
+      self.privateBlocks.append(newBlock.id)
+      if(self.lastSelfishBlock == None): # attach it to last honest
+        parentOfSelfish = self.longestHonestChainLast
+        Blk_mean_Tk = random.expovariate(1 / constants.Tk)
+        yield env.timeout(Blk_mean_Tk/2000) # Mining time
+        self.blockchain.addBlockToParent(parentOfSelfish.id, newBlock)
+        self.firstSelfishBlock = newBlock
+        self.lastSelfishBlock = newBlock
+      else: # attach new block to last selfish block
+        parentOfSelfish = self.lastSelfishBlock
+        Blk_mean_Tk = random.expovariate(1 / constants.Tk)
+        yield env.timeout(Blk_mean_Tk/2000) # Mining time
+        self.blockchain.addBlockToParent(parentOfSelfish.id, newBlock)
+        self.lastSelfishBlock = newBlock
+      
       self.seenBlocks[newBlock.id] = newBlockCretime
-
-      pass
 
 
   def generateTransaction(self,txnGeneratedAt):
@@ -230,12 +272,12 @@ class Node(object):
     self.seenTxns[txn.id]=self.env.now
     return
 
-
-
   def rcv_and_bdcst_blk(self, block, blkrcvdTime, Blk_latency, PrevBlockId, env):
-    #initir = 0
-    # while initir == 0:
-    print("rcvd a blk by ", self.id, " but timeout for ",Blk_latency)
+    if(self.badType == "stubborn"):
+      # print("hereeee.. WTF")
+      # self.blockRecvBdcstStubborn(block, blkrcvdTime, Blk_latency, PrevBlockId)
+      return
+    # print("rcvd a blk by ", self.id, " but timeout for ",Blk_latency)
     yield self.env.timeout(Blk_latency)
 
     if block.id not in self.seenBlocks.keys():
@@ -250,31 +292,34 @@ class Node(object):
               self.txnQueue.remove(s_txns)
         #broadcast seen blk
         nextNodes = self.network.graph[self.id]
-        print("broadcasting blk")
+        # print("broadcasting blk")
         for adjNodeIndex in nextNodes:
           adjNode = self.network.nodes[adjNodeIndex]
           Blk_latency1 = self.latency(adjNode.type, "block")
           BlkrcvTime1 = env.now + Blk_latency1
-          self.env.process(adjNode.rcv_and_bdcst_blk(block, BlkrcvTime1, Blk_latency1,BlockParentID, env))
+          if(adjNode.badType == "stubborn"):
+            self.env.process(adjNode.blockRecvBdcstStubborn(block, BlkrcvTime1, Blk_latency1,BlockParentID))
+          else:
+            self.env.process(adjNode.rcv_and_bdcst_blk(block, BlkrcvTime1, Blk_latency1,BlockParentID, env))
       else:
         self.pendBlks[block.id]=block
     yield self.env.timeout(1)
 
   def mining(self,env):
     while True:
-      print("mining started for ",self.id)
+      # print("mining started for ",self.id)
       while len(self.txnQueue)<1:
-        print("no of txns <1 for ",self.id)
+        # print("no of txns <1 for ",self.id)
         yield self.env.timeout(1)
       newBlock = self.createBlk(self.env.now)
-      print("minig blk created fro ",self.id)
+      # print("minig blk created fro ",self.id)
       newBlockCretime = self.env.now
       ParentBlkId = self.blockchain.getDeepestBlockID()
       longestchainLen = len(self.blockchain.getLongestChain())
       Blk_mean_Tk = random.expovariate(1 / constants.Tk)
       yield env.timeout(Blk_mean_Tk)
       if(len(self.blockchain.getLongestChain()) == longestchainLen) and (self.blockchain.getDeepestBlockID() == ParentBlkId):
-        print("minig blk added for ",self.id)
+        # print("minig blk added for ",self.id)
         self.blockchain.addBlockToParent(ParentBlkId,newBlock)
         self.seenBlocks[newBlock.id] = newBlockCretime
         #bdcast created blk
@@ -283,8 +328,11 @@ class Node(object):
           adjNode = self.network.nodes[adjNodeIndex]
           Blk_latency1 = self.latency(adjNode.type, "block")
           BlkrcvTime1 = newBlockCretime + Blk_latency1
-          print("bdcast to ",adjNodeIndex)
-          self.env.process(adjNode.rcv_and_bdcst_blk(newBlock, BlkrcvTime1, Blk_latency1, ParentBlkId, self.env))
+          # print("bdcast to ",adjNodeIndex)
+          if(adjNode.badType == "stubborn"):
+            self.env.process(adjNode.blockRecvBdcstStubborn(newBlock, BlkrcvTime1, Blk_latency1, ParentBlkId))
+          else:
+            self.env.process(adjNode.rcv_and_bdcst_blk(newBlock, BlkrcvTime1, Blk_latency1, ParentBlkId, self.env))
           yield self.env.timeout(1)
       else:
         print("minig blk not added ",self.id)
@@ -310,9 +358,14 @@ class Node(object):
   def printNode(self):
     print("nodeId: ", self.id)
     print("type:", self.type)
+    if(self.badType == "stubborn"):
+      print("badType:", self.badType)
     # print("utxo:", self.utxo)
     # print("txnQueue:", self.txnQueue)
     # print("txnSent:", self.txnSent)
+    if(self.badType == "stubborn"):
+      print("privateBlocks: ", self.privateBlocks)
+      print("privateBlocksPublished: ", self.privateBlocksPublished)
     print("--------------------------")
 
   def printTxn(self):

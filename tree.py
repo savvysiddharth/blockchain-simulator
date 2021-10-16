@@ -59,8 +59,8 @@ class Tree:
     f.close()
     self._printToFile(self.root, flag, 0, False, filename)
 
-  def getDeepestNode(self):
-    res = [self.root]
+  def getDeepestNode(self): # gives earliest arriving deepest node
+    res = [self.root] # list, because we want pass by reference
     maxLevel = [-1]
     self._getDeepestNode(self.root, 0, maxLevel, res)
     # print(res[0])
@@ -77,6 +77,24 @@ class Tree:
           res[0] = currentNode
           maxLevel[0] = level
 
+  def getDeepestNodes(self): # returns list of nodes at same depth (only deepest ones)
+    res = [self.root]
+    maxLevel = [0]
+    self._getDeepestNodes(self.root, 0, maxLevel, res)
+    return res
+
+  def _getDeepestNodes(self, currentNode, level, maxLevel, res):
+    if (currentNode != None):
+      level += 1
+      for child in currentNode.children:
+        self._getDeepestNodes(child, level, maxLevel, res)
+        if (level > maxLevel[0]):
+          res.clear()
+          res.append(child)
+          maxLevel[0] = level
+        elif (level == maxLevel[0]):
+          res.append(child)
+
   # def _getDeepestNode(self, currentNode, currentDeepest, maxDepth):
   #   maxDepth = 0
   #   for child in currentNode.children:
@@ -88,33 +106,22 @@ class Tree:
   #   return [maxDepth ,currentDeepest]
 
   def _printTree(self, x, flag, depth, isLast):
-    # f = open(str(filename), "a")
-
     if (x == None):
       return
 
     for i in range(depth):
       if (flag[i] == True):
         print("| " + "  ", end="")
-        # f.write("| " + "  ")
       else:
         print("  " + "  ", end="")
-        # f.write("  " + "  ")
 
     if (depth == 0):
       print("Genesis: " + x.key)
-      # f.write("Genesis " + str(x.key) + " : " + str(x.arrivalTime))
-      # f.write('\n')
     elif (isLast):
       print("+--- " + x.key)
-      # f.write("+--- " + str(x.key) + " : " + str(x.arrivalTime))
-      # f.write('\n')
       flag[depth] = False
     else:
       print("+--- " + x.key)
-      # f.write("+--- " + str(x.key) + " : " + str(x.arrivalTime))
-      # f.write('\n')
-    # f.close()
     it = 0
     for child in x.children:
       it += 1

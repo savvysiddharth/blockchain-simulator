@@ -34,8 +34,9 @@ class Node(object):
     self.blockchain = Blockchain() # honest chain
 
     # private selfish chain
+    self.firstSelfishNode = None
     self.lastSelfishNode = None
-    self.privateChain = [self.blockchain.chain.root.value]
+    self.privateChain = []
 
   def run(self):
     print("inside run() of ",self.id)
@@ -88,8 +89,8 @@ class Node(object):
         for adjNodeIndex in nextNodes:
           adjNode = self.network.nodes[adjNodeIndex]
           Blk_latency1 = self.latency(adjNode.type, "block")
-          BlkrcvTime1 = env.now + Blk_latency1
-          self.env.process(adjNode.rcv_and_bdcst_blk(block, BlkrcvTime1, Blk_latency1,BlockParentID, env))
+          BlkrcvTime1 = self.env.now + Blk_latency1
+          self.env.process(adjNode.rcv_and_bdcst_blk(block, BlkrcvTime1, Blk_latency1,BlockParentID, self.env))
       else:
         self.pendBlks[block.id]=block
     yield self.env.timeout(1)
@@ -102,16 +103,23 @@ class Node(object):
         print("no of txns <1 for ",self.id)
         yield self.env.timeout(1)
       # Start private mining
-      privateParent = None
-      if(self.lastSelfishNode == None): # attach it to genesis
-        privateParent = self.blockchain.chain.root.value # genesis
+      privateParent = None # where do we attach new block
+      if(self.lastSelfishNode == None and len(self.privateChain) == 0): # attach it to genesis
+        genesis = self.blockchain.chain.root.value
+        self.firstSelfishNode = genesis # genesis
+        privateParent = genesis 
+        self.privateChain.append(privateParent)
       else: # attach new block to last selfish node
         privateParent = self.lastSelfishNode
 
       newBlockCretime = self.env.now
       newBlock = self.createBlk(newBlockCretime)
       ParentBlkId = privateParent.id
-      
+      chainLength = len(self.blockchain.getChainEndsWithBlock(privateParent))
+      Blk_mean_Tk = random.expovariate(1 / constants.Tk)
+      yield env.timeout(Blk_mean_Tk) # Mining time
+      self.blockchain.addBlockToParent(ParentBlkId, newBlock)
+      self.seenBlocks[newBlock.id] = newBlockCretime
 
       pass
 
@@ -129,25 +137,7 @@ class Node(object):
     self.env.process(self.broadcast_txn(txn,txnGeneratedAt))
     yield self.env.timeout(1)
 
-  def broadcast_txn(self, txn,txnGeneratedAt):
-    """bdcast_flg1 = 0  # rcvd txn
-    bdcast_flg2 = 0  # sent_txn
-    nextNodes = self.network.graph[self.id]
-    for adjNodeIndex in nextNodes:
-      adjNode = self.network.nodes[adjNodeIndex]
-      if txn.id in self.rcvdTxns.keys():  # not a self generated trxn but a rcvd trxn
-        if adjNodeIndex in self.rcvdTxns[txn.id]:  # rcvd from this node
-          bdcast_flg1 = 1  # don't broadcast
-      # else : self generated txn , so broad cast
-      if txn.id in self.sentTxns.keys():  # this trxn already sent to some nodes
-        if adjNodeIndex in self.sentTxns[txn.id]:
-          bdcast_flg2 = 1  # if txn already sent to this adjnode don't resend
-
-      if bdcast_flg2 != 1 and bdcast_flg1 != 1:
-        self.sentTxns.setdefault(txn.id, []).append(adjNodeIndex)
-        Txnrcvtime = self.latency(self.type , "transaction")
-        self.env.process(adjNode.rcv_txn(txn, self.id, Txnrcvtime)) """
-
+  def broadcast_txn(self, txn, txnGeneratedAt):
     seenNodeid1 = []
     seenNodeid2 = []
     #seenNodeids = []
@@ -169,10 +159,9 @@ class Node(object):
 
     yield self.env.timeout(1)
 
-  """ if this transxn is already seen what to do ??????  """
 
-  def rcv_txn(self, txn, txnSendr_Id, Txnrcvtime,Txnlatency ):
-    #yield self.env.timeout(Txnlatency)
+  def rcv_txn(self, txn, txnSendr_Id, Txnrcvtime, Txnlatency):
+    yield self.env.timeout(Txnlatency)
     #print("Transaction ",txn.id," received by ",self.id ," from ",txnSendr_Id," at ",Txnrcvtime)
 
     if txn.id not in self.rcvdTxns.keys():  # never seen new txn comes
@@ -243,7 +232,7 @@ class Node(object):
 
 
 
-  def rcv_and_bdcst_blk(self,block,blkrcvdTime,Blk_latency,PrevBlockId,env):
+  def rcv_and_bdcst_blk(self, block, blkrcvdTime, Blk_latency, PrevBlockId, env):
     #initir = 0
     # while initir == 0:
     print("rcvd a blk by ", self.id, " but timeout for ",Blk_latency)
@@ -270,35 +259,6 @@ class Node(object):
       else:
         self.pendBlks[block.id]=block
     yield self.env.timeout(1)
-
-    """ self.seenBlocks[block.id] = blkrcvdTime
-    BlockParentID = block.prev
-    if self.blockchain.searchBlock(BlockParentID) is not None:  # the parent block exists in the blockchain
-      self.blockchain.addBlockToParent(BlockParentID, block)
-      # remove from txnqueue
-      for txn in block.transactions:
-        for s_txns in self.txnQueue:
-          if txn.id == s_txns.id:
-            self.txnQueue.remove(s_txns)
-
-      if len(self.blockchain.getLongestChain()) > self.longestChainLength:
-        self.longestChainLength = self.longestChainLength + 1
-        mining_longestChainLen = len(self.blockchain.getLongestChain()) # mining of new blk starts
-        newBlkCreated_Time = env.now
-        newBlkCreated = self.createBlk(newBlkCreated_Time)
-        #self.mining(newBlkCreated, newBlkCreated_Time, mining_longestChainLen,env)
-        Blk_mean_Tk = random.expovariate(1 / constants.Tk)
-        yield env.timeout(Blk_mean_Tk)
-        if len(self.blockchain.getLongestChain()) == mining_longestChainLen:
-          #newBlockParentID = self.blockchain.getDeepestBlock().ID
-          #self.blockchain.addBlockToParent(newBlockParentID, newBlkCreated)
-          self.blockchain.addBlock(newBlkCreated)
-          self.longestChainLength = self.longestChainLength + 1
-          env.process(self.broadcastBlk(newBlkCreated ,newBlkCreated_Time))
-        else:
-          for trxns in newBlkCreated.transactions:
-            self.txnQueue.append(trxns)
-    yield self.env.timeout(1) """
 
   def mining(self,env):
     while True:
@@ -332,13 +292,6 @@ class Node(object):
           self.txnQueue.append(trxns)
 
   def createBlk(self, newBlk_crTime):
-    """   TxnsInBlkchain = []
-    PendingTxnSubset=[]
-    longestChain = self.blockchain.getLongestChain()
-    for blk in longestChain:
-      for txn in blk.transactions:
-        TxnsInBlkchain.append(txn)
-    PendingTxnSubset = list(set(self.txnQueue) - set(TxnsInBlkchain)) """
     if len(self.txnQueue) > 10: # take only top 10 pending txns
       PendingTxnSubset = self.txnQueue[0:10]
       self.txnQueue = self.txnQueue[10:]

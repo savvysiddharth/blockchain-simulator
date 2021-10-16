@@ -1,7 +1,5 @@
-import time
 import hashlib
-
-from numpy.core.shape_base import block
+# from numpy.core.shape_base import block
 import tree
 import numpy
 import constants
@@ -47,6 +45,14 @@ class Blockchain:
             longestChain.append(currentNode.value)
             currentNode = currentNode.parent
         return longestChain
+
+    def getChainEndsWithBlock(self, endBlock):
+        currentNode = self.chain.searchNode(endBlock.id)
+        theChain = []
+        while(currentNode != None):
+            theChain.append(currentNode.value)
+            currentNode = currentNode.parent
+        return theChain
 
     def getDeepestBlockID(self):
         deepestNode = self.chain.getDeepestNode()

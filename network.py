@@ -9,6 +9,7 @@ class Network:
     self.nodes = self._initializeNodes(env)
     self.graph = self._randomSampling()
     self._connectNodes(self.graph)
+    print("Network Graph: ")
     print(self.graph)
 
 
@@ -42,7 +43,7 @@ class Network:
     return nodes
 
   def _randomSampling(self): # generates connected graph randomly
-    n = constants.TotalNodes
+    n = constants.TotalNodes # because, last one is adversary (that is dealt separately)
     graph = []
     visited = []
     for i in range(n):
@@ -75,9 +76,15 @@ class Network:
       visited[nextNode] = True
       currentNode = nextNode # move to the next node
     
-    graph[n-1] = []
+    # last node is adversary
+    listOfNodes = []
     for i in range(n):
-      graph[n-1].append(i)
+      listOfNodes.append(i)
+    connectedCount = int(len(listOfNodes) * constants.fractionHonestConnected)
+    randomlySelectedNodes = random.sample(listOfNodes, connectedCount)
+    graph.append([]) # new entry for adversary node
+    for nodeId in randomlySelectedNodes:
+      graph[n].append(nodeId)
       
     return graph
 

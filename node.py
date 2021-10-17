@@ -100,7 +100,7 @@ class Node(object):
           # self.longestHonestChainLength = newChainLength
           # self.longestHonestChainLast = block # would be block
           privateChain = self.blockchain.getChainEndsWithBlockBeginWithBlock(self.firstSelfishBlock, self.lastSelfishBlock)
-          Delta = len(honestChain) - len(privateChain)
+          Delta = len(privateChain) - len(honestChain)
           print("DELTA: ", Delta)
           if(Delta <= 0): # attacker lost - no hope
             self.firstSelfishBlock = None
@@ -152,14 +152,14 @@ class Node(object):
       if(self.lastSelfishBlock == None): # attach it to last honest
         parentOfSelfish = self.longestHonestChainLast
         Blk_mean_Tk = random.expovariate(1 / constants.Tk)
-        yield env.timeout(Blk_mean_Tk/2000) # Mining time
+        yield env.timeout(Blk_mean_Tk/100) # Mining time
         self.blockchain.addBlockToParent(parentOfSelfish.id, newBlock)
         self.firstSelfishBlock = newBlock
         self.lastSelfishBlock = newBlock
       else: # attach new block to last selfish block
         parentOfSelfish = self.lastSelfishBlock
         Blk_mean_Tk = random.expovariate(1 / constants.Tk)
-        yield env.timeout(Blk_mean_Tk/2000) # Mining time
+        yield env.timeout(Blk_mean_Tk/100) # Mining time
         self.blockchain.addBlockToParent(parentOfSelfish.id, newBlock)
         self.lastSelfishBlock = newBlock
       

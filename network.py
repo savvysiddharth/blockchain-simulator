@@ -75,9 +75,9 @@ class Network:
       visited[nextNode] = True
       currentNode = nextNode # move to the next node
     
-    # graph[n-1] = []
-    # for i in range(n):
-    #   graph[n-1].append(i)
+    graph[n-1] = []
+    for i in range(n):
+      graph[n-1].append(i)
       
     return graph
 

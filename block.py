@@ -51,8 +51,15 @@ class Blockchain:
     self.chain.addNode(parentId, block.id, block)
 
   def getLongestChain(self): # does backtracking on deepest node to find longest chain
-    deepestNode = self.chain.getDeepestNode()
-    currentNode = deepestNode
+    deepestNodes = self.chain.getDeepestNodes()
+    minTime = deepestNodes[0].value.timestamp
+    earliestNode = deepestNodes[0]
+    for node in deepestNodes:
+      thisTimestamp = node.value.timestamp
+      if(thisTimestamp < minTime):
+        minTime = thisTimestamp
+        earliestNode = node
+    currentNode = earliestNode
     longestChain = []
     while(currentNode != None):
       longestChain.append(currentNode.value)

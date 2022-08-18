@@ -63,6 +63,7 @@ class Tree:
     res = [self.root] # list, because we want pass by reference
     maxLevel = [-1]
     self._getDeepestNode(self.root, 0, maxLevel, res)
+    # print(res[0])
     if (res[0].children):
       res[0] = res[0].children[0]
     return res[0]
@@ -93,6 +94,16 @@ class Tree:
           maxLevel[0] = level
         elif (level == maxLevel[0]):
           res.append(child)
+
+  # def _getDeepestNode(self, currentNode, currentDeepest, maxDepth):
+  #   maxDepth = 0
+  #   for child in currentNode.children:
+  #     childDepth = self._getDeepestNode(child, currentDeepest, maxDepth)[0]
+  #     if(childDepth > maxDepth):
+  #       maxDepth = childDepth
+  #       currentDeepest = child
+  #   maxDepth = maxDepth + 1
+  #   return [maxDepth ,currentDeepest]
 
   def _printTree(self, x, flag, depth, isLast):
     if (x == None):
